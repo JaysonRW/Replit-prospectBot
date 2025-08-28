@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { GoogleMapsService } from "./google-maps-service";
 import {
   insertLeadSchema,
   insertMessageTemplateSchema,
@@ -11,6 +12,7 @@ import {
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const googleMapsService = new GoogleMapsService();
   // Leads routes
   app.get("/api/leads", async (req, res) => {
     try {
@@ -65,13 +67,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/leads/search", async (req, res) => {
     try {
       const searchParams = searchLeadsSchema.parse(req.body);
-      const leads = await storage.searchLeads(searchParams);
-      res.json(leads);
+      
+      // Buscar leads reais do Google Maps
+      const realLeads = await googleMapsService.searchBusinesses(searchParams);
+      
+      // Criar os leads no storage
+      const createdLeads = await Promise.all(
+        realLeads.map(lead => storage.createLead(lead))
+      );
+      
+      res.json(createdLeads);
     } catch (error) {
+      console.error("Search error:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid search parameters", details: error.errors });
       }
-      res.status(500).json({ error: "Failed to search leads" });
+      res.status(500).json({ error: "Failed to search leads from Google Maps" });
     }
   });
 

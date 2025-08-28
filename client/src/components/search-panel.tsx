@@ -28,20 +28,12 @@ export default function SearchPanel() {
   const searchMutation = useMutation({
     mutationFn: async (data: SearchLeads) => {
       setIsSearching(true);
-      // Simulate API search delay
-      await new Promise(resolve => setTimeout(resolve, 2500));
       
-      // Mock lead generation based on search criteria
-      const mockLeads: InsertLead[] = generateMockLeads(data);
+      // Buscar leads reais do Google Maps via API
+      const response = await apiRequest("POST", "/api/leads/search", data);
+      const leads = await response.json();
       
-      // Create the leads
-      const createdLeads = await Promise.all(
-        mockLeads.map(lead => 
-          apiRequest("POST", "/api/leads", lead).then(res => res.json())
-        )
-      );
-      
-      return createdLeads;
+      return leads;
     },
     onSuccess: (leads) => {
       setIsSearching(false);
@@ -49,7 +41,7 @@ export default function SearchPanel() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard-metrics"] });
       toast({
         title: "Busca realizada!",
-        description: `${leads.length} novos leads encontrados.`,
+        description: `${leads.length} leads reais encontrados no Google Maps.`,
       });
       form.reset();
     },
@@ -57,7 +49,7 @@ export default function SearchPanel() {
       setIsSearching(false);
       toast({
         title: "Erro na busca",
-        description: "Falha ao buscar novos leads.",
+        description: "Falha ao buscar leads no Google Maps. Verifique sua conexão.",
         variant: "destructive",
       });
     },
@@ -124,7 +116,7 @@ export default function SearchPanel() {
             data-testid="button-search-leads"
           >
             <Search className="w-4 h-4 mr-2" />
-            {isSearching ? "Buscando..." : "Buscar Leads"}
+            {isSearching ? "Buscando no Google Maps..." : "Buscar Leads Reais"}
           </Button>
         </form>
       </Form>
