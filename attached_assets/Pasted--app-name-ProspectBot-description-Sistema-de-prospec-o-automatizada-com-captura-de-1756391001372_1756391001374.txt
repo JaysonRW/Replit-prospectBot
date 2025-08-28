@@ -1,0 +1,77 @@
+{
+  "app_name": "ProspectBot",
+  "description": "Sistema de prospecção automatizada com captura de leads do Google Maps e envio de mensagens via WhatsApp.",
+  "features": [
+    {
+      "name": "Busca de Empresas",
+      "type": "search",
+      "source": "Google Maps API",
+      "filters": ["tipo_de_empresa", "localização"],
+      "output": ["nome", "endereço", "telefone", "email", "data_adicionado"]
+    },
+    {
+      "name": "Lista de Leads",
+      "type": "cards",
+      "fields": ["nome", "endereço", "telefone", "email", "data_adicionado", "status"],
+      "status_options": ["Não Contatado", "Mensagem Enviada", "Já Contatado"],
+      "actions": [
+        {
+          "name": "Enviar WhatsApp",
+          "type": "button",
+          "dynamic_message": "Olá! Somos uma empresa especializada em soluções digitais para negócios como o {NOME_DA_EMPRESA}. Gostaria de agendar uma conversa rápida para apresentar como podemos ajudar a aumentar suas vendas? Sem compromisso! 😊"
+        }
+      ]
+    },
+    {
+      "name": "Modelo de Mensagem",
+      "type": "editor",
+      "editable": true,
+      "placeholders": ["{NOME_DA_EMPRESA}"]
+    },
+    {
+      "name": "Dashboard",
+      "type": "stats",
+      "metrics": [
+        "total_leads",
+        "mensagens_enviadas_hoje",
+        "mensagens_enviadas_mes",
+        "taxa_conversao",
+        "leads_contatados",
+        "leads_nao_contatados"
+      ],
+      "progress_bar": true
+    },
+    {
+      "name": "Controle de Velocidade",
+      "type": "config",
+      "fields": {
+        "mensagens_por_minuto": { "default": 3, "range": "2-5" },
+        "mensagens_por_hora": { "default": 30, "range": "20-50" }
+      }
+    },
+    {
+      "name": "Exportação",
+      "type": "export",
+      "formats": ["CSV"]
+    }
+  ],
+  "ui_style": {
+    "layout": "cards + dashboard",
+    "theme": "light",
+    "colors": {
+      "primary": "#2563eb",
+      "secondary": "#10b981",
+      "danger": "#ef4444",
+      "warning": "#f59e0b"
+    },
+    "components": {
+      "cards": "rounded-xl shadow-md",
+      "buttons": "rounded-lg font-semibold",
+      "dashboard": "grid layout with colorful stats"
+    }
+  },
+  "storage": {
+    "type": "localStorage",
+    "optional_future_integration": ["Firebase", "SQL Database"]
+  }
+}
