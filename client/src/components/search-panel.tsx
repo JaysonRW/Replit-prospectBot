@@ -22,6 +22,7 @@ export default function SearchPanel() {
     defaultValues: {
       businessType: "",
       location: "",
+      freeSearch: "",
     },
   });
 
@@ -39,9 +40,11 @@ export default function SearchPanel() {
       setIsSearching(false);
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard-metrics"] });
+      
+      const searchType = form.getValues("freeSearch") ? "busca livre" : "tipo predefinido";
       toast({
-        title: "Busca realizada!",
-        description: `${leads.length} leads reais encontrados no Google Maps.`,
+        title: "Busca realizada com sucesso!",
+        description: `${leads.length} empresas encontradas via ${searchType} no Google Maps.`,
       });
       form.reset();
     },
@@ -56,6 +59,21 @@ export default function SearchPanel() {
   });
 
   const onSubmit = (data: SearchLeads) => {
+    // Validar se pelo menos uma opção de busca foi fornecida
+    if (!data.freeSearch?.trim() && !data.businessType) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Preencha a busca livre ou selecione um tipo de empresa.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Se não houver localização, usar padrão
+    if (!data.location?.trim()) {
+      data.location = "São Paulo, SP";
+    }
+    
     searchMutation.mutate(data);
   };
 
@@ -63,17 +81,45 @@ export default function SearchPanel() {
     <Card className="rounded-xl shadow-md p-6 border border-border">
       <h2 className="text-lg font-semibold text-foreground mb-4">
         <Search className="inline w-5 h-5 mr-2 text-primary" />
-        Buscar Empresas
+        🔍 Busca Inteligente de Empresas
       </h2>
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {/* Barra de Busca Livre - Prioridade */}
+          <FormField
+            control={form.control}
+            name="freeSearch"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-foreground">
+                  🔍 Busca Livre (Recomendado)
+                </FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Ex: Lojas de Material de Construção, Agências de Viagem, Escritórios de Advocacia..." 
+                    {...field}
+                    data-testid="input-free-search"
+                    className="text-base"
+                  />
+                </FormControl>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Digite qualquer tipo de negócio que deseja encontrar
+                </p>
+              </FormItem>
+            )}
+          />
+
+          <div className="text-center text-sm text-muted-foreground">
+            — ou use as opções predefinidas abaixo —
+          </div>
+
           <FormField
             control={form.control}
             name="businessType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-foreground">Tipo de Empresa</FormLabel>
+                <FormLabel className="text-sm font-medium text-foreground">Tipo de Empresa (Predefinido)</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger data-testid="select-business-type">
@@ -109,6 +155,96 @@ export default function SearchPanel() {
             )}
           />
 
+          {/* Filtros de Lead Scoring */}
+          <div className="border-t pt-4">
+            <h3 className="text-sm font-medium text-foreground mb-3">🎯 Filtros de Qualidade do Lead</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="minRating"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs text-foreground">Nota mínima</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        min="0"
+                        max="5"
+                        step="0.1"
+                        placeholder="4.5"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="minUserRatings"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs text-foreground">Mín. avaliações</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        min="0"
+                        placeholder="30"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="hasWebsite"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs text-foreground">Website</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(value === "true")} value={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Qualquer" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="false">Sem website (Alta oportunidade)</SelectItem>
+                        <SelectItem value="true">Com website</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="leadCategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs text-foreground">Categoria</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Qualquer" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Quente">🔥 Quente (Alta prioridade)</SelectItem>
+                        <SelectItem value="Morno">🌡️ Morno (Média prioridade)</SelectItem>
+                        <SelectItem value="Frio">❄️ Frio (Baixa prioridade)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
           <Button 
             type="submit" 
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
@@ -116,7 +252,7 @@ export default function SearchPanel() {
             data-testid="button-search-leads"
           >
             <Search className="w-4 h-4 mr-2" />
-            {isSearching ? "Buscando no Google Maps..." : "Buscar Leads Reais"}
+            {isSearching ? "Buscando no Google Maps..." : "🔍 Buscar Empresas no Google Maps"}
           </Button>
         </form>
       </Form>

@@ -13,6 +13,13 @@ export const leads = pgTable("leads", {
   dateAdded: timestamp("date_added").defaultNow().notNull(),
   businessType: text("business_type"),
   location: text("location"),
+  // Novos campos para Lead Scoring
+  website: text("website"),
+  rating: text("rating"),
+  userRatingsTotal: text("user_ratings_total"),
+  leadScore: text("lead_score"),
+  leadScoreBreakdown: text("lead_score_breakdown"), // JSON com detalhes do score
+  leadCategory: text("lead_category"), // "Quente", "Morno", "Frio"
 });
 
 export const messageTemplates = pgTable("message_templates", {
@@ -41,6 +48,14 @@ export const dashboardMetrics = pgTable("dashboard_metrics", {
 export const insertLeadSchema = createInsertSchema(leads).omit({
   id: true,
   dateAdded: true,
+}).extend({
+  // Campos opcionais para Lead Scoring
+  website: z.string().optional(),
+  rating: z.number().optional(),
+  userRatingsTotal: z.number().optional(),
+  leadScore: z.string().optional(),
+  leadScoreBreakdown: z.string().optional(),
+  leadCategory: z.string().optional(),
 });
 
 export const insertMessageTemplateSchema = createInsertSchema(messageTemplates).omit({
@@ -58,9 +73,24 @@ export const updateLeadStatusSchema = z.object({
 export const searchLeadsSchema = z.object({
   businessType: z.string().optional(),
   location: z.string().optional(),
+  freeSearch: z.string().optional(), // Nova campo para busca livre
+  // Filtros de Lead Scoring
+  minRating: z.number().min(0).max(5).optional(),
+  minUserRatings: z.number().min(0).optional(),
+  hasWebsite: z.boolean().optional(),
+  leadCategory: z.enum(["Quente", "Morno", "Frio"]).optional(),
+  minLeadScore: z.number().min(0).max(100).optional(),
 });
 
-export type Lead = typeof leads.$inferSelect;
+export type Lead = typeof leads.$inferSelect & {
+  // Campos adicionais que podem vir da API do Google Maps
+  website?: string;
+  rating?: number;
+  userRatingsTotal?: number;
+  leadScore?: string;
+  leadScoreBreakdown?: string;
+  leadCategory?: string;
+};
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type MessageTemplate = typeof messageTemplates.$inferSelect;
 export type InsertMessageTemplate = z.infer<typeof insertMessageTemplateSchema>;

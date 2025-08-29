@@ -128,9 +128,31 @@ export default function LeadsList() {
                       {lead.address}
                     </p>
                   </div>
-                  <Badge className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeVariant(lead.status)}`}>
-                    {lead.status}
-                  </Badge>
+                  <div className="flex flex-col items-end space-y-2">
+                    <Badge className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeVariant(lead.status)}`}>
+                      {lead.status}
+                    </Badge>
+                    
+                    {/* Lead Score Badge */}
+                    {lead.leadScore && (
+                      <div className="flex flex-col items-end space-y-1">
+                        <Badge 
+                          className={`text-xs px-2 py-1 rounded-full ${
+                            lead.leadCategory === "Quente" 
+                              ? "bg-red-100 text-red-800 border border-red-200" 
+                              : lead.leadCategory === "Morno"
+                              ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                              : "bg-blue-100 text-blue-800 border border-blue-200"
+                          }`}
+                        >
+                          {lead.leadCategory || "N/A"}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          Score: {lead.leadScore}/100
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
@@ -143,6 +165,28 @@ export default function LeadsList() {
                     <span data-testid={`text-lead-email-${lead.id}`}>{lead.email}</span>
                   </div>
                 </div>
+                
+                {/* Informações adicionais do Lead */}
+                {lead.rating || lead.userRatingsTotal || lead.website ? (
+                  <div className="grid grid-cols-3 gap-4 mb-3 text-xs text-muted-foreground">
+                    {lead.rating && (
+                      <div className="flex items-center">
+                        <span className="mr-1">⭐</span>
+                        <span>{lead.rating}</span>
+                      </div>
+                    )}
+                    {lead.userRatingsTotal && (
+                      <div className="flex items-center">
+                        <span className="mr-1">👥</span>
+                        <span>{lead.userRatingsTotal} avaliações</span>
+                      </div>
+                    )}
+                    <div className="flex items-center">
+                      <span className="mr-1">{lead.website ? "🌐" : "❌"}</span>
+                      <span>{lead.website ? "Com site" : "Sem site"}</span>
+                    </div>
+                  </div>
+                ) : null}
                 
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">
